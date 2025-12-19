@@ -1,14 +1,13 @@
 # Google Workspace MCP Server
 
-This project provides a Model Context Protocol (MCP) server for interacting with **Google Slides** and **Google Sheets** APIs, with built-in **automatic snapshot version control**. Create, read, and modify presentations and spreadsheets programmatically, with the safety of automatic backups before every modification.
+This project provides a Model Context Protocol (MCP) server for interacting with **Google Slides** and **Google Sheets** APIs. Create, read, and modify presentations and spreadsheets programmatically, with access to Google's built-in version history for easy undo/restore.
 
 ## Features
 
 - **Google Sheets**: Create, read, update, and manipulate spreadsheets
-- **Google Slides**: Create and modify presentations (all existing functionality preserved)
-- **Automatic Snapshots**: Every modification automatically creates a backup snapshot
-- **Version Control**: List snapshots, revert to previous versions, manage backups
-- **Safe by Default**: Snapshots created automatically (opt-out with `skipSnapshot: true`)
+- **Google Slides**: Create and modify presentations
+- **Version History**: Access Google's native revision history for any document
+- **Minimal Permissions**: Uses least-privilege OAuth scopes
 
 ## Prerequisites
 
@@ -67,8 +66,8 @@ Go to [Google Cloud Console](https://console.cloud.google.com/):
 4. On the "Scopes" page, click "ADD OR REMOVE SCOPES" and add:
    - `https://www.googleapis.com/auth/presentations` (Slides access)
    - `https://www.googleapis.com/auth/spreadsheets` (Sheets access)
-   - `https://www.googleapis.com/auth/drive.readonly` (Read Drive files)
-   - `https://www.googleapis.com/auth/drive.file` (Create snapshots)
+   - `https://www.googleapis.com/auth/drive.readonly` (Read Drive files/revisions)
+   - `https://www.googleapis.com/auth/drive.file` (Manage files created by app)
 5. Complete consent screen setup
 6. Back at "Credentials", create OAuth client ID:
    - Application type: "Desktop app"
@@ -148,98 +147,60 @@ Replace `/absolute/path/to/google-workspace-mcp` with the actual path to your in
 
 ### Google Slides Tools
 
-**Read Operations:**
 - `create_presentation` - Create a new presentation
 - `get_presentation` - Get presentation metadata and structure
 - `get_page` - Get details about a specific slide
 - `summarize_presentation` - Extract all text content for summarization
-
-**Write Operations:**
-- `batch_update_presentation` - Apply batch updates (creates snapshot first)
-  - Optional parameter: `skipSnapshot: true` to disable automatic backup
+- `batch_update_presentation` - Apply batch updates to a presentation
 
 ### Google Sheets Tools
 
-**Read Operations:**
 - `create_spreadsheet` - Create a new spreadsheet
 - `get_spreadsheet` - Get spreadsheet metadata and structure
 - `get_sheet_values` - Read cell values from a range
 - `summarize_spreadsheet` - Extract all data for summarization
-
-**Write Operations** (all create snapshots automatically):
 - `update_sheet_values` - Update cell values in a range
 - `batch_update_spreadsheet` - Apply formatting/structural changes
 - `append_sheet_values` - Append rows to a sheet
 
-All write operations support `skipSnapshot: true` parameter to opt-out of automatic backups.
+### Version History Tools
 
-### Version Control Tools
+These tools use Google's native revision history (no extra files created):
 
-- `create_snapshot` - Manually create a snapshot of any document
-- `list_snapshots` - List all snapshots for a document
-- `revert_to_snapshot` - Restore a previous version (creates backup first)
-- `delete_snapshot` - Permanently delete a snapshot
+- `list_revisions` - List version history for a document
+- `get_revision` - Get details about a specific revision with restore instructions
 
-## Snapshot Version Control
+## Version History (Undo/Restore)
 
-### How It Works
+Both Google Sheets and Google Slides have built-in version history that automatically tracks all changes. This MCP server provides access to that history:
 
-Every time you modify a document (Slides or Sheets), the server automatically:
-1. Creates a copy of the current state in Google Drive
-2. Stores metadata about the operation in the snapshot
-3. Proceeds with your requested changes
-
-Snapshots are stored with descriptive names like:
-```
-Sales Report_snapshot_2025-12-19T14-30-22_update_sheet_values
-```
-
-### Managing Snapshots
-
-**List snapshots for a document:**
+**List all versions of a document:**
 ```json
 {
-  "tool": "list_snapshots",
+  "tool": "list_revisions",
   "documentId": "your_document_id"
 }
 ```
 
-**Revert to a previous version:**
+**Get restore instructions for a specific version:**
 ```json
 {
-  "tool": "revert_to_snapshot",
-  "originalDocumentId": "your_document_id",
-  "snapshotId": "snapshot_file_id",
+  "tool": "get_revision",
+  "documentId": "your_document_id",
+  "revisionId": "revision_id",
   "documentType": "spreadsheet"
 }
 ```
 
-**Delete old snapshots:**
-```json
-{
-  "tool": "delete_snapshot",
-  "snapshotId": "snapshot_file_id"
-}
-```
-
-### Opting Out of Snapshots
-
-For any write operation, add `skipSnapshot: true`:
-```json
-{
-  "tool": "update_sheet_values",
-  "spreadsheetId": "...",
-  "range": "Sheet1!A1:B10",
-  "values": [[1, 2], [3, 4]],
-  "skipSnapshot": true
-}
-```
+To restore a previous version:
+1. Open the document in Google Sheets/Slides
+2. Go to **File > Version history > See version history**
+3. Click on the version you want to restore
+4. Click "Restore this version"
 
 ## Example Use Cases
 
-### Automated QA Workbooks (Perfect for GitHub Actions!)
-
-The Sheets tools are designed to be stateless and scriptable, making them ideal for CI/CD:
+### Automated QA Workbooks
 
 ```javascript
 // Create a test plan workbook
@@ -274,25 +235,57 @@ await batch_update_presentation({
   presentationId: "...",
   requests: [/* slide creation requests */]
 });
-
-// Safe to experiment - snapshot created automatically!
 ```
 
-### Collaborative Data Management
+### Version History Management
 
 ```javascript
-// List all changes made to a spreadsheet
-const snapshots = await list_snapshots({
+// List all versions of a spreadsheet
+const revisions = await list_revisions({
   documentId: "shared_budget_spreadsheet_id"
 });
 
-// Revert if something went wrong
-await revert_to_snapshot({
-  originalDocumentId: "shared_budget_spreadsheet_id",
-  snapshotId: snapshots[0].snapshotId,
+// Get instructions to restore a previous version
+const details = await get_revision({
+  documentId: "shared_budget_spreadsheet_id",
+  revisionId: revisions[0].revisionId,
   documentType: "spreadsheet"
 });
+// Follow the restoreInstructions in the response
 ```
+
+## Security
+
+### Principle of Least Privilege
+
+This MCP server requests only the minimum OAuth scopes needed:
+
+| Scope | Purpose | Access Level |
+|-------|---------|--------------|
+| `presentations` | Create/edit presentations | Full access to Slides |
+| `spreadsheets` | Create/edit spreadsheets | Full access to Sheets |
+| `drive.readonly` | List revisions | Read-only Drive access |
+| `drive.file` | Manage created files | Only files created by this app |
+
+### Security Best Practices
+
+1. **Never commit credentials**: Add `.env` to your `.gitignore`
+2. **Treat tokens like passwords**: Your refresh token grants access to your Google account
+3. **Use separate projects**: Create a dedicated Google Cloud project for this MCP
+4. **Review access regularly**: Check [Google Account Permissions](https://myaccount.google.com/permissions) periodically
+5. **Rotate tokens if compromised**: Regenerate with `npm run get-token` if you suspect exposure
+
+### What This Server Can Access
+
+- **Slides**: All presentations in your Google account
+- **Sheets**: All spreadsheets in your Google account
+- **Drive**: Read-only access to list files and revisions; write access only to files created by this app
+
+### What This Server Cannot Access
+
+- Gmail, Calendar, or other Google services
+- Files created by other apps (due to `drive.file` scope limitation)
+- Your Google account password or 2FA settings
 
 ## Troubleshooting
 
@@ -366,11 +359,6 @@ This usually means the `spreadsheets` (or `presentations`) scope wasn't in your 
 3. Update your config/env with the new token
 4. Restart the MCP server
 
-### Snapshots not being created
-- Verify `drive.file` scope is enabled
-- Check that you haven't set `skipSnapshot: true`
-- Look for warning messages in server logs
-
 ### Permission denied errors
 - Ensure all 4 APIs are enabled in Google Cloud Console
 - Verify your OAuth consent screen has all required scopes
@@ -406,7 +394,7 @@ Make sure you're logged into the correct Google account. If you have multiple ac
 You can test the MCP server directly using the MCP Inspector without needing Claude:
 
 ```bash
-cd /Users/path/to/google-workspace-mcp
+cd /path/to/google-workspace-mcp
 export $(cat .env | xargs) && npx @modelcontextprotocol/inspector node build/index.js
 ```
 
@@ -437,13 +425,6 @@ npm start
 npm run get-token
 ```
 
-## Security Notes
-
-- Keep your `.env` file secure and never commit it to version control
-- The `drive.file` scope only allows access to files created by this app
-- Snapshots are stored in your Google Drive - you control them
-- Refresh tokens should be treated like passwords
-
 ## License
 
 ISC
@@ -454,5 +435,6 @@ Issues and pull requests welcome! This MCP server is designed to be extended wit
 
 ## Version History
 
-- **0.2.0** - Added Google Sheets support and automatic snapshot version control
+- **0.3.0** - Simplified version control using Google's native revision history (removed custom snapshots)
+- **0.2.0** - Added Google Sheets support
 - **0.1.0** - Initial release with Google Slides support

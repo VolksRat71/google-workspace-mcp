@@ -7,10 +7,8 @@ import {
   BatchUpdatePresentationArgsSchema,
   GetPageArgsSchema,
   SummarizePresentationArgsSchema,
-  CreateSnapshotArgsSchema,
-  ListSnapshotsArgsSchema,
-  RevertToSnapshotArgsSchema,
-  DeleteSnapshotArgsSchema,
+  ListRevisionsArgsSchema,
+  GetRevisionArgsSchema,
   CreateSpreadsheetArgsSchema,
   GetSpreadsheetArgsSchema,
   GetSheetValuesArgsSchema,
@@ -24,10 +22,6 @@ import { getPresentationTool } from './tools/slides/getPresentation.js';
 import { batchUpdatePresentationTool } from './tools/slides/batchUpdatePresentation.js';
 import { getPageTool } from './tools/slides/getPage.js';
 import { summarizePresentationTool } from './tools/slides/summarizePresentation.js';
-import { createSnapshotTool } from './tools/versionControl/createSnapshot.js';
-import { listSnapshotsTool } from './tools/versionControl/listSnapshots.js';
-import { revertToSnapshotTool } from './tools/versionControl/revertToSnapshot.js';
-import { deleteSnapshotTool } from './tools/versionControl/deleteSnapshot.js';
 import { createSpreadsheetTool } from './tools/sheets/createSpreadsheet.js';
 import { getSpreadsheetTool } from './tools/sheets/getSpreadsheet.js';
 import { getSheetValuesTool } from './tools/sheets/getSheetValues.js';
@@ -35,6 +29,7 @@ import { updateSheetValuesTool } from './tools/sheets/updateSheetValues.js';
 import { batchUpdateSpreadsheetTool } from './tools/sheets/batchUpdateSpreadsheet.js';
 import { appendSheetValuesTool } from './tools/sheets/appendSheetValues.js';
 import { summarizeSpreadsheetTool } from './tools/sheets/summarizeSpreadsheet.js';
+import { listRevisions, getRevision } from './utils/revisionManager.js';
 import { executeTool } from './utils/toolExecutor.js';
 
 export const setupToolHandlers = (
@@ -205,7 +200,7 @@ export const setupToolHandlers = (
       },
       {
         name: 'update_sheet_values',
-        description: 'Update cell values in a Google Sheets spreadsheet (creates snapshot before modifying)',
+        description: 'Update cell values in a Google Sheets spreadsheet',
         inputSchema: {
           type: 'object',
           properties: {
@@ -227,17 +222,13 @@ export const setupToolHandlers = (
               enum: ['RAW', 'USER_ENTERED'],
               description: 'Optional. How input data should be interpreted (default: USER_ENTERED).',
             },
-            skipSnapshot: {
-              type: 'boolean',
-              description: 'Optional. Skip automatic snapshot creation (default: false).',
-            },
           },
           required: ['spreadsheetId', 'range', 'values'],
         },
       },
       {
         name: 'batch_update_spreadsheet',
-        description: 'Apply batch formatting and structural changes to a spreadsheet (creates snapshot before modifying)',
+        description: 'Apply batch formatting and structural changes to a spreadsheet',
         inputSchema: {
           type: 'object',
           properties: {
@@ -250,17 +241,13 @@ export const setupToolHandlers = (
               items: { type: 'object' },
               description: 'Array of update requests. See Google Sheets API documentation.',
             },
-            skipSnapshot: {
-              type: 'boolean',
-              description: 'Optional. Skip automatic snapshot creation (default: false).',
-            },
           },
           required: ['spreadsheetId', 'requests'],
         },
       },
       {
         name: 'append_sheet_values',
-        description: 'Append rows to a Google Sheets spreadsheet (creates snapshot before modifying)',
+        description: 'Append rows to a Google Sheets spreadsheet',
         inputSchema: {
           type: 'object',
           properties: {
@@ -281,10 +268,6 @@ export const setupToolHandlers = (
               type: 'string',
               enum: ['RAW', 'USER_ENTERED'],
               description: 'Optional. How input data should be interpreted (default: USER_ENTERED).',
-            },
-            skipSnapshot: {
-              type: 'boolean',
-              description: 'Optional. Skip automatic snapshot creation (default: false).',
             },
           },
           required: ['spreadsheetId', 'range', 'values'],
@@ -308,57 +291,34 @@ export const setupToolHandlers = (
           required: ['spreadsheetId'],
         },
       },
-      // ===== Version Control Tools =====
+      // ===== Version History Tools (using Google's native revisions) =====
       {
-        name: 'create_snapshot',
-        description: 'Manually create a snapshot of a Google Workspace document',
+        name: 'list_revisions',
+        description: 'List version history for a Google Sheets or Slides document',
         inputSchema: {
           type: 'object',
           properties: {
             documentId: {
               type: 'string',
-              description: 'The ID of the document to snapshot.',
-            },
-            documentType: {
-              type: 'string',
-              enum: ['presentation', 'spreadsheet'],
-              description: 'The type of document.',
-            },
-            label: {
-              type: 'string',
-              description: 'Optional. Custom label for this snapshot.',
-            },
-          },
-          required: ['documentId', 'documentType'],
-        },
-      },
-      {
-        name: 'list_snapshots',
-        description: 'List all snapshots for a specific document',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            documentId: {
-              type: 'string',
-              description: 'The ID of the document to list snapshots for.',
+              description: 'The ID of the document to list revisions for.',
             },
           },
           required: ['documentId'],
         },
       },
       {
-        name: 'revert_to_snapshot',
-        description: 'Revert a document to a previous snapshot (creates backup first)',
+        name: 'get_revision',
+        description: 'Get details about a specific revision with instructions to restore it',
         inputSchema: {
           type: 'object',
           properties: {
-            originalDocumentId: {
+            documentId: {
               type: 'string',
-              description: 'The ID of the document to revert.',
+              description: 'The ID of the document.',
             },
-            snapshotId: {
+            revisionId: {
               type: 'string',
-              description: 'The ID of the snapshot to restore from.',
+              description: 'The ID of the revision to get details for.',
             },
             documentType: {
               type: 'string',
@@ -366,21 +326,7 @@ export const setupToolHandlers = (
               description: 'The type of document.',
             },
           },
-          required: ['originalDocumentId', 'snapshotId', 'documentType'],
-        },
-      },
-      {
-        name: 'delete_snapshot',
-        description: 'Permanently delete a snapshot',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            snapshotId: {
-              type: 'string',
-              description: 'The ID of the snapshot to delete.',
-            },
-          },
-          required: ['snapshotId'],
+          required: ['documentId', 'revisionId', 'documentType'],
         },
       },
     ],
@@ -402,7 +348,7 @@ export const setupToolHandlers = (
           return executeTool(slides, name, args, GetPresentationArgsSchema, getPresentationTool);
         case 'batch_update_presentation': {
           const parsedArgs = BatchUpdatePresentationArgsSchema.parse(args);
-          return await batchUpdatePresentationTool(slides, drive, parsedArgs);
+          return await batchUpdatePresentationTool(slides, parsedArgs);
         }
         case 'get_page':
           return executeTool(slides, name, args, GetPageArgsSchema, getPageTool);
@@ -424,39 +370,41 @@ export const setupToolHandlers = (
         }
         case 'update_sheet_values': {
           const parsedArgs = UpdateSheetValuesArgsSchema.parse(args);
-          return await updateSheetValuesTool(sheets, drive, parsedArgs);
+          return await updateSheetValuesTool(sheets, parsedArgs);
         }
         case 'batch_update_spreadsheet': {
           const parsedArgs = BatchUpdateSpreadsheetArgsSchema.parse(args);
-          return await batchUpdateSpreadsheetTool(sheets, drive, parsedArgs);
+          return await batchUpdateSpreadsheetTool(sheets, parsedArgs);
         }
         case 'append_sheet_values': {
           const parsedArgs = AppendSheetValuesArgsSchema.parse(args);
-          return await appendSheetValuesTool(sheets, drive, parsedArgs);
+          return await appendSheetValuesTool(sheets, parsedArgs);
         }
         case 'summarize_spreadsheet': {
           const parsedArgs = SummarizeSpreadsheetArgsSchema.parse(args);
           return await summarizeSpreadsheetTool(sheets, parsedArgs);
         }
 
-        // ===== Version Control Tools =====
-        case 'create_snapshot': {
-          const parsedArgs = CreateSnapshotArgsSchema.parse(args);
-          return await createSnapshotTool(drive, parsedArgs);
+        // ===== Version History Tools =====
+        case 'list_revisions': {
+          const parsedArgs = ListRevisionsArgsSchema.parse(args);
+          const revisions = await listRevisions(drive, parsedArgs.documentId);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(revisions, null, 2) }],
+          };
         }
-        case 'list_snapshots': {
-          const parsedArgs = ListSnapshotsArgsSchema.parse(args);
-          return await listSnapshotsTool(drive, parsedArgs);
+        case 'get_revision': {
+          const parsedArgs = GetRevisionArgsSchema.parse(args);
+          const result = await getRevision(
+            drive,
+            parsedArgs.documentId,
+            parsedArgs.revisionId,
+            parsedArgs.documentType
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          };
         }
-        case 'revert_to_snapshot': {
-          const parsedArgs = RevertToSnapshotArgsSchema.parse(args);
-          return await revertToSnapshotTool(drive, sheets, slides, parsedArgs);
-        }
-        case 'delete_snapshot': {
-          const parsedArgs = DeleteSnapshotArgsSchema.parse(args);
-          return await deleteSnapshotTool(drive, parsedArgs);
-        }
-
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool requested: ${name}` }],

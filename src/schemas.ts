@@ -20,7 +20,6 @@ export const BatchUpdatePresentationArgsSchema = z.object({
   presentationId: z.string().min(1, { message: '"presentationId" (string) is required.' }),
   requests: z.array(GoogleSlidesRequestSchema).min(1, { message: '"requests" (array) is required.' }),
   writeControl: GoogleSlidesWriteControlSchema.optional(),
-  skipSnapshot: z.boolean().optional(),
 });
 export type BatchUpdatePresentationArgs = z.infer<typeof BatchUpdatePresentationArgsSchema>;
 
@@ -36,33 +35,21 @@ export const SummarizePresentationArgsSchema = z.object({
 });
 export type SummarizePresentationArgs = z.infer<typeof SummarizePresentationArgsSchema>;
 
-// ===== Version Control Schemas =====
+// ===== Version History Schemas (using Google's native revisions) =====
 
 export const DocumentTypeSchema = z.enum(['presentation', 'spreadsheet']);
 
-export const CreateSnapshotArgsSchema = z.object({
-  documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
-  documentType: DocumentTypeSchema,
-  label: z.string().optional(),
-});
-export type CreateSnapshotArgs = z.infer<typeof CreateSnapshotArgsSchema>;
-
-export const ListSnapshotsArgsSchema = z.object({
+export const ListRevisionsArgsSchema = z.object({
   documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
 });
-export type ListSnapshotsArgs = z.infer<typeof ListSnapshotsArgsSchema>;
+export type ListRevisionsArgs = z.infer<typeof ListRevisionsArgsSchema>;
 
-export const RevertToSnapshotArgsSchema = z.object({
-  originalDocumentId: z.string().min(1, { message: '"originalDocumentId" (string) is required.' }),
-  snapshotId: z.string().min(1, { message: '"snapshotId" (string) is required.' }),
+export const GetRevisionArgsSchema = z.object({
+  documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
+  revisionId: z.string().min(1, { message: '"revisionId" (string) is required.' }),
   documentType: DocumentTypeSchema,
 });
-export type RevertToSnapshotArgs = z.infer<typeof RevertToSnapshotArgsSchema>;
-
-export const DeleteSnapshotArgsSchema = z.object({
-  snapshotId: z.string().min(1, { message: '"snapshotId" (string) is required.' }),
-});
-export type DeleteSnapshotArgs = z.infer<typeof DeleteSnapshotArgsSchema>;
+export type GetRevisionArgs = z.infer<typeof GetRevisionArgsSchema>;
 
 // ===== Google Sheets Schemas =====
 
@@ -92,14 +79,12 @@ export const UpdateSheetValuesArgsSchema = z.object({
   range: z.string().min(1, { message: '"range" (string) is required (e.g., "Sheet1!A1:B10").' }),
   values: z.array(z.array(z.any())).min(1, { message: '"values" (2D array) is required.' }),
   valueInputOption: z.enum(['RAW', 'USER_ENTERED']).optional(),
-  skipSnapshot: z.boolean().optional(),
 });
 export type UpdateSheetValuesArgs = z.infer<typeof UpdateSheetValuesArgsSchema>;
 
 export const BatchUpdateSpreadsheetArgsSchema = z.object({
   spreadsheetId: z.string().min(1, { message: '"spreadsheetId" (string) is required.' }),
   requests: z.array(GoogleSheetsRequestSchema).min(1, { message: '"requests" (array) is required.' }),
-  skipSnapshot: z.boolean().optional(),
 });
 export type BatchUpdateSpreadsheetArgs = z.infer<typeof BatchUpdateSpreadsheetArgsSchema>;
 
@@ -108,7 +93,6 @@ export const AppendSheetValuesArgsSchema = z.object({
   range: z.string().min(1, { message: '"range" (string) is required (e.g., "Sheet1!A1").' }),
   values: z.array(z.array(z.any())).min(1, { message: '"values" (2D array) is required.' }),
   valueInputOption: z.enum(['RAW', 'USER_ENTERED']).optional(),
-  skipSnapshot: z.boolean().optional(),
 });
 export type AppendSheetValuesArgs = z.infer<typeof AppendSheetValuesArgsSchema>;
 
