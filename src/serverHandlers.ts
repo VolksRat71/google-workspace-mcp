@@ -16,6 +16,7 @@ import {
   BatchUpdateSpreadsheetArgsSchema,
   AppendSheetValuesArgsSchema,
   SummarizeSpreadsheetArgsSchema,
+  CopySheetArgsSchema,
 } from './schemas.js';
 import { createPresentationTool } from './tools/slides/createPresentation.js';
 import { getPresentationTool } from './tools/slides/getPresentation.js';
@@ -29,6 +30,7 @@ import { updateSheetValuesTool } from './tools/sheets/updateSheetValues.js';
 import { batchUpdateSpreadsheetTool } from './tools/sheets/batchUpdateSpreadsheet.js';
 import { appendSheetValuesTool } from './tools/sheets/appendSheetValues.js';
 import { summarizeSpreadsheetTool } from './tools/sheets/summarizeSpreadsheet.js';
+import { copySheetTool } from './tools/sheets/copySheet.js';
 import { listRevisions, getRevision } from './utils/revisionManager.js';
 import { executeTool } from './utils/toolExecutor.js';
 
@@ -291,6 +293,28 @@ export const setupToolHandlers = (
           required: ['spreadsheetId'],
         },
       },
+      {
+        name: 'copy_sheet',
+        description: 'Copy a sheet from one spreadsheet to another, preserving all formatting and styles',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sourceSpreadsheetId: {
+              type: 'string',
+              description: 'The ID of the source spreadsheet.',
+            },
+            sourceSheetId: {
+              type: 'number',
+              description: 'The ID of the sheet to copy (not the name, the numeric sheetId).',
+            },
+            destinationSpreadsheetId: {
+              type: 'string',
+              description: 'The ID of the destination spreadsheet.',
+            },
+          },
+          required: ['sourceSpreadsheetId', 'sourceSheetId', 'destinationSpreadsheetId'],
+        },
+      },
       // ===== Version History Tools (using Google's native revisions) =====
       {
         name: 'list_revisions',
@@ -383,6 +407,10 @@ export const setupToolHandlers = (
         case 'summarize_spreadsheet': {
           const parsedArgs = SummarizeSpreadsheetArgsSchema.parse(args);
           return await summarizeSpreadsheetTool(sheets, parsedArgs);
+        }
+        case 'copy_sheet': {
+          const parsedArgs = CopySheetArgsSchema.parse(args);
+          return await copySheetTool(sheets, parsedArgs);
         }
 
         // ===== Version History Tools =====

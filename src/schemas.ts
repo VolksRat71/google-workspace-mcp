@@ -101,3 +101,10 @@ export const SummarizeSpreadsheetArgsSchema = z.object({
   includeFormulas: z.boolean().optional(),
 });
 export type SummarizeSpreadsheetArgs = z.infer<typeof SummarizeSpreadsheetArgsSchema>;
+
+export const CopySheetArgsSchema = z.object({
+  sourceSpreadsheetId: z.string().min(1, { message: '"sourceSpreadsheetId" (string) is required.' }),
+  sourceSheetId: z.number({ message: '"sourceSheetId" (number) is required.' }),
+  destinationSpreadsheetId: z.string().min(1, { message: '"destinationSpreadsheetId" (string) is required.' }),
+});
+export type CopySheetArgs = z.infer<typeof CopySheetArgsSchema>;

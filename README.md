@@ -162,6 +162,7 @@ Replace `/absolute/path/to/google-workspace-mcp` with the actual path to your in
 - `update_sheet_values` - Update cell values in a range
 - `batch_update_spreadsheet` - Apply formatting/structural changes
 - `append_sheet_values` - Append rows to a sheet
+- `copy_sheet` - Copy a sheet between spreadsheets (preserves all formatting and styles)
 
 ### Version History Tools
 
@@ -235,6 +236,19 @@ await batch_update_presentation({
   presentationId: "...",
   requests: [/* slide creation requests */]
 });
+```
+
+### Copy Sheets Between Spreadsheets
+
+```javascript
+// Copy a template sheet to a new workbook (preserves all formatting!)
+await copy_sheet({
+  sourceSpreadsheetId: "template_workbook_id",
+  sourceSheetId: 176288731,  // numeric sheet ID, not the name
+  destinationSpreadsheetId: "target_workbook_id"
+});
+
+// Perfect for: QA templates, report templates, data migrations
 ```
 
 ### Version History Management
@@ -435,6 +449,7 @@ Issues and pull requests welcome! This MCP server is designed to be extended wit
 
 ## Version History
 
+- **0.3.1** - Added `copy_sheet` tool for copying sheets between spreadsheets with full formatting
 - **0.3.0** - Simplified version control using Google's native revision history (removed custom snapshots)
 - **0.2.0** - Added Google Sheets support
 - **0.1.0** - Initial release with Google Slides support
