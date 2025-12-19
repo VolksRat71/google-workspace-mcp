@@ -1,6 +1,6 @@
 import { slides_v1 } from 'googleapis';
-import { GetPresentationArgs } from '../schemas.js';
-import { handleGoogleApiError } from '../utils/errorHandler.js';
+import { GetPresentationArgs } from '../../schemas.js';
+import { handleGoogleApiError } from '../../utils/errorHandler.js';
 
 /**
  * Gets details about a Google Slides presentation.

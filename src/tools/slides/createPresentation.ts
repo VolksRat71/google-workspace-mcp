@@ -1,6 +1,6 @@
 import { slides_v1 } from 'googleapis';
-import { CreatePresentationArgs } from '../schemas.js';
-import { handleGoogleApiError } from '../utils/errorHandler.js';
+import { CreatePresentationArgs } from '../../schemas.js';
+import { handleGoogleApiError } from '../../utils/errorHandler.js';
 
 /**
  * Creates a new Google Slides presentation.

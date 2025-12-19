@@ -1,6 +1,6 @@
 import { slides_v1 } from 'googleapis';
-import { GetPageArgs } from '../schemas.js';
-import { handleGoogleApiError } from '../utils/errorHandler.js';
+import { GetPageArgs } from '../../schemas.js';
+import { handleGoogleApiError } from '../../utils/errorHandler.js';
 
 /**
  * Gets details about a specific page (slide) in a presentation.

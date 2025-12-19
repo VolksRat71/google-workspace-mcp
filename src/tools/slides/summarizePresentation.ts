@@ -1,6 +1,6 @@
 import { slides_v1 } from 'googleapis';
-import { SummarizePresentationArgs } from '../schemas.js';
-import { handleGoogleApiError } from '../utils/errorHandler.js';
+import { SummarizePresentationArgs } from '../../schemas.js';
+import { handleGoogleApiError } from '../../utils/errorHandler.js';
 
 const extractText = (elements: slides_v1.Schema$PageElement[] | undefined): string[] => {
   if (!elements) return [];

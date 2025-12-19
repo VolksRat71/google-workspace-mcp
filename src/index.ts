@@ -37,7 +37,17 @@ const initializeAndRunServer = async () => {
       auth: oauth2Client,
     });
 
-    setupToolHandlers(server, slides);
+    const sheets = google.sheets({
+      version: 'v4',
+      auth: oauth2Client,
+    });
+
+    const drive = google.drive({
+      version: 'v3',
+      auth: oauth2Client,
+    });
+
+    setupToolHandlers(server, slides, sheets, drive);
 
     server.onerror = (error: Error) => console.error('[MCP Server Error]', error);
 
