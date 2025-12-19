@@ -1,137 +1,350 @@
-# Google Slides MCP Server
+# Google Workspace MCP Server
 
-This project provides a Model Context Protocol (MCP) server for interacting with the Google Slides API. It allows you to create, read, and modify Google Slides presentations programmatically.
+This project provides a Model Context Protocol (MCP) server for interacting with **Google Slides** and **Google Sheets** APIs, with built-in **automatic snapshot version control**. Create, read, and modify presentations and spreadsheets programmatically, with the safety of automatic backups before every modification.
+
+## Features
+
+- **Google Sheets**: Create, read, update, and manipulate spreadsheets
+- **Google Slides**: Create and modify presentations (all existing functionality preserved)
+- **Automatic Snapshots**: Every modification automatically creates a backup snapshot
+- **Version Control**: List snapshots, revert to previous versions, manage backups
+- **Safe by Default**: Snapshots created automatically (opt-out with `skipSnapshot: true`)
 
 ## Prerequisites
 
-*   Node.js (v18 or later recommended)
-*   npm (usually comes with Node.js)
-*   Google Cloud Project with the Google Slides API enabled.
-*   OAuth 2.0 Credentials (Client ID and Client Secret) for your Google Cloud Project.
-*   A Google Refresh Token associated with the OAuth 2.0 credentials and the necessary Google Slides API scopes.
+- Node.js (v18 or later recommended)
+- npm (usually comes with Node.js)
+- Google Cloud Project with APIs enabled (Slides, Sheets, Drive)
+- OAuth 2.0 Credentials (Client ID and Client Secret)
+- **Google Refresh Token** (one-time setup - see below)
 
-## Setup
+## Quick Start
 
-1.  **Clone the repository (if applicable) or ensure you are in the project directory.**
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
+2. **Build the server:**
+   ```bash
+   npm run build
+   ```
 
-3.  **Build the Server:**
-    Compile the TypeScript code to JavaScript:
-    ```bash
-    npm run build
-    ```
-    This will create a `build` directory containing the compiled JavaScript code.
+3. **Set up Google OAuth** (see detailed setup below)
 
-4.  **Obtain Google API Credentials:**
-    *   Go to the [Google Cloud Console](https://console.cloud.google.com/).
-    *   Create a new project or select an existing one.
-    *   Navigate to "APIs & Services" > "Enabled APIs & services".
-    *   Click "+ ENABLE APIS AND SERVICES", search for "Google Slides API", and enable it.
-    *   Navigate to "APIs & Services" > "Credentials".
-    *   Click "+ CREATE CREDENTIALS" > "OAuth client ID".
-    *   If prompted, configure the OAuth consent screen. For "User type", choose "External" unless you have a Google Workspace account and want to restrict it internally. Provide an app name, user support email, and developer contact information.
-    *   On the "Scopes" page during consent screen setup, click "ADD OR REMOVE SCOPES". Search for and add the following scopes:
-        *   `https://www.googleapis.com/auth/presentations` (To view and manage your presentations)
-        *   *(Optional: Add `https://www.googleapis.com/auth/drive.readonly` or other Drive scopes if needed for specific operations like listing files, although not strictly required for basic Slides operations)*
-    *   Save the consent screen configuration.
-    *   Go back to "Credentials", click "+ CREATE CREDENTIALS" > "OAuth client ID".
-    *   Select "Desktop app" as the Application type.
-    *   Give it a name (e.g., "Slides MCP Client").
-    *   Click "Create". You will see your **Client ID** and **Client Secret**. **Copy these down securely.** You can also download the JSON file containing these credentials.
+4. **Configure environment variables** in `.env`:
+   ```
+   GOOGLE_CLIENT_ID=your_client_id_here
+   GOOGLE_CLIENT_SECRET=your_client_secret_here
+   GOOGLE_REFRESH_TOKEN=your_refresh_token_here
+   ```
 
-5.  **Obtain a Google Refresh Token:**
-    *   A refresh token allows the server to obtain new access tokens without requiring user interaction each time. Generating one typically involves a one-time authorization flow.
-    *   You can use the [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground/) for this:
-        *   Go to the OAuth 2.0 Playground.
-        *   Click the gear icon (Settings) in the top right.
-        *   Check "Use your own OAuth credentials".
-        *   Enter the **Client ID** and **Client Secret** you obtained in the previous step.
-        *   In the "Step 1 - Select & authorize APIs" section on the left, find "Slides API v1" and select the `https://www.googleapis.com/auth/presentations` scope (and any other Drive scopes if you added them).
-        *   Click "Authorize APIs".
-        *   Sign in with the Google account you want the server to act on behalf of.
-        *   Grant the requested permissions.
-        *   You will be redirected back to the Playground. In "Step 2 - Exchange authorization code for tokens", you should see the **Refresh token** and Access token. **Copy the Refresh token securely.**
+5. **Run the server:**
+   ```bash
+   npm start
+   ```
 
-    Alternatively, you can use the provided `get-token` script to obtain a refresh token. This script will build the project and then run a utility that guides you through the OAuth flow to get a refresh token. Ensure your `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are configured in your environment or a `.env` file if the script requires them (you may need to check the `src/getRefreshToken.ts` file for details on how it expects credentials). To run the script:
+## Google Cloud Setup
 
-    ```bash
-    npm run get-token
-    ```
+### 1. Enable Required APIs
 
-6.  **Configure Credentials and Command in MCP Settings:**
-    Locate your MCP settings file (e.g., `.../User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`). Find or create the entry for `"google-slides-mcp"` and configure it with the command to run the server and your credentials:
-    ```json
-    "google-slides-mcp": {
-      "transportType": "stdio",
+Go to [Google Cloud Console](https://console.cloud.google.com/):
+1. Create a new project or select an existing one
+2. Navigate to "APIs & Services" > "Library"
+3. Enable the following APIs:
+   - **Google Slides API**
+   - **Google Sheets API**
+   - **Google Drive API**
+
+### 2. Create OAuth 2.0 Credentials
+
+1. Go to "APIs & Services" > "Credentials"
+2. Click "+ CREATE CREDENTIALS" > "OAuth client ID"
+3. If prompted, configure the OAuth consent screen:
+   - User type: "External" (or "Internal" for Workspace accounts)
+   - Add app name, support email, developer contact
+4. On the "Scopes" page, click "ADD OR REMOVE SCOPES" and add:
+   - `https://www.googleapis.com/auth/presentations` (Slides access)
+   - `https://www.googleapis.com/auth/spreadsheets` (Sheets access)
+   - `https://www.googleapis.com/auth/drive.readonly` (Read Drive files)
+   - `https://www.googleapis.com/auth/drive.file` (Create snapshots)
+5. Complete consent screen setup
+6. Back at "Credentials", create OAuth client ID:
+   - Application type: "Desktop app"
+   - Name: "Google Workspace MCP" (or your choice)
+7. Copy your **Client ID** and **Client Secret**
+
+### 3. Get Your Refresh Token (ONE-TIME SETUP)
+
+**IMPORTANT**: The refresh token is generated **once** during initial setup. After you get it:
+- Store it in your `.env` file or MCP settings
+- The server will use it automatically for all future sessions
+- You only need to regenerate it if you:
+  - Change the OAuth scopes
+  - Revoke access from your Google account
+  - Need to use a different Google account
+
+#### Option A: Using the Built-in Script (Recommended)
+
+1. Add your Client ID and Secret to `.env`:
+   ```
+   GOOGLE_CLIENT_ID=your_client_id
+   GOOGLE_CLIENT_SECRET=your_client_secret
+   ```
+
+2. Run the token generator:
+   ```bash
+   npm run get-token
+   ```
+
+3. Follow the prompts:
+   - Browser will open to Google authorization page
+   - Sign in and grant permissions
+   - Your refresh token will be displayed in the terminal
+
+4. Copy the refresh token to your `.env`:
+   ```
+   GOOGLE_REFRESH_TOKEN=your_refresh_token_here
+   ```
+
+#### Option B: Using OAuth 2.0 Playground
+
+1. Go to [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)
+2. Click the gear icon (Settings), check "Use your own OAuth credentials"
+3. Enter your Client ID and Client Secret
+4. In "Step 1", select these scopes:
+   - `https://www.googleapis.com/auth/presentations`
+   - `https://www.googleapis.com/auth/spreadsheets`
+   - `https://www.googleapis.com/auth/drive.readonly`
+   - `https://www.googleapis.com/auth/drive.file`
+5. Click "Authorize APIs" and sign in
+6. In "Step 2", click "Exchange authorization code for tokens"
+7. Copy the **Refresh token** to your `.env`
+
+## MCP Configuration
+
+Add to your MCP settings file (e.g., Claude Code settings):
+
+```json
+{
+  "mcpServers": {
+    "google-workspace-mcp": {
       "command": "node",
-      "args": [
-        "/path/to/google-slides-mcp/build/index.js"
-      ],
+      "args": ["/absolute/path/to/google-workspace-mcp/build/index.js"],
       "env": {
-        "GOOGLE_CLIENT_ID": "YOUR_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET": "YOUR_CLIENT_SECRET",
-        "GOOGLE_REFRESH_TOKEN": "YOUR_REFRESH_TOKEN"
+        "GOOGLE_CLIENT_ID": "your_client_id",
+        "GOOGLE_CLIENT_SECRET": "your_client_secret",
+        "GOOGLE_REFRESH_TOKEN": "your_refresh_token"
       }
-      // ... other optional settings like description ...
     }
-    ```
-    Replace `/path/to/google-slides-mcp/build/index.js` with the actual path to the compiled server index file on your system. Replace `YOUR_CLIENT_ID`, `YOUR_CLIENT_SECRET`, and `YOUR_REFRESH_TOKEN` with the actual values you obtained. The MCP runner will inject these values into the server's environment when it starts.
-
-## Running the Server
-
-Execute the compiled code:
-
-```bash
-npm run start
+  }
+}
 ```
 
-The server will start and listen for MCP requests on standard input/output (stdio). You should see a message like: `Google Slides MCP server running and connected via stdio.`
+Replace `/absolute/path/to/google-workspace-mcp` with the actual path to your installation.
 
 ## Available Tools
 
-The server exposes the following tools via the Model Context Protocol:
+### Google Slides Tools
 
-*   **`create_presentation`**: Creates a new Google Slides presentation.
-    *   **Input:**
-        *   `title` (string, required): The title for the new presentation.
-    *   **Output:** JSON object representing the created presentation details.
+**Read Operations:**
+- `create_presentation` - Create a new presentation
+- `get_presentation` - Get presentation metadata and structure
+- `get_page` - Get details about a specific slide
+- `summarize_presentation` - Extract all text content for summarization
 
-*   **`get_presentation`**: Retrieves details about an existing presentation.
-    *   **Input:**
-        *   `presentationId` (string, required): The ID of the presentation to retrieve.
-        *   `fields` (string, optional): A field mask (e.g., "slides,pageSize") to limit the returned data.
-    *   **Output:** JSON object representing the presentation details.
+**Write Operations:**
+- `batch_update_presentation` - Apply batch updates (creates snapshot first)
+  - Optional parameter: `skipSnapshot: true` to disable automatic backup
 
-*   **`batch_update_presentation`**: Applies a series of updates to a presentation. This is the primary method for modifying slides (adding text, shapes, images, creating slides, etc.).
-    *   **Input:**
-        *   `presentationId` (string, required): The ID of the presentation to update.
-        *   `requests` (array, required): An array of request objects defining the updates. Refer to the [Google Slides API `batchUpdate` documentation](https://developers.google.com/slides/api/reference/rest/v1/presentations/batchUpdate#requestbody) for the structure of individual requests.
-        *   `writeControl` (object, optional): Controls write request execution (e.g., using revision IDs).
-    *   **Output:** JSON object representing the result of the batch update.
+### Google Sheets Tools
 
-*   **`get_page`**: Retrieves details about a specific page (slide) within a presentation.
-    *   **Input:**
-        *   `presentationId` (string, required): The ID of the presentation containing the page.
-        *   `pageObjectId` (string, required): The object ID of the page (slide) to retrieve.
-    *   **Output:** JSON object representing the page details.
+**Read Operations:**
+- `create_spreadsheet` - Create a new spreadsheet
+- `get_spreadsheet` - Get spreadsheet metadata and structure
+- `get_sheet_values` - Read cell values from a range
+- `summarize_spreadsheet` - Extract all data for summarization
 
-*   **`summarize_presentation`**: Extracts and formats all text content from a presentation for easier summarization.
-    *   **Input:**
-        *   `presentationId` (string, required): The ID of the presentation to summarize.
-        *   `include_notes` (boolean, optional): Whether to include speaker notes in the summary. Defaults to false.
-    *   **Output:** JSON object containing:
-        *   `title`: The presentation's title
-        *   `slideCount`: Total number of slides
-        *   `lastModified`: Revision information
-        *   `slides`: Array of slide objects containing:
-            *   `slideNumber`: Position in presentation
-            *   `slideId`: Object ID of the slide
-            *   `content`: All text extracted from the slide
-            *   `notes`: Speaker notes (if requested and available)
+**Write Operations** (all create snapshots automatically):
+- `update_sheet_values` - Update cell values in a range
+- `batch_update_spreadsheet` - Apply formatting/structural changes
+- `append_sheet_values` - Append rows to a sheet
 
-*(More tools can be added by extending `src/index.ts`)*
-# google-workspace-mcp
+All write operations support `skipSnapshot: true` parameter to opt-out of automatic backups.
+
+### Version Control Tools
+
+- `create_snapshot` - Manually create a snapshot of any document
+- `list_snapshots` - List all snapshots for a document
+- `revert_to_snapshot` - Restore a previous version (creates backup first)
+- `delete_snapshot` - Permanently delete a snapshot
+
+## Snapshot Version Control
+
+### How It Works
+
+Every time you modify a document (Slides or Sheets), the server automatically:
+1. Creates a copy of the current state in Google Drive
+2. Stores metadata about the operation in the snapshot
+3. Proceeds with your requested changes
+
+Snapshots are stored with descriptive names like:
+```
+Sales Report_snapshot_2025-12-19T14-30-22_update_sheet_values
+```
+
+### Managing Snapshots
+
+**List snapshots for a document:**
+```json
+{
+  "tool": "list_snapshots",
+  "documentId": "your_document_id"
+}
+```
+
+**Revert to a previous version:**
+```json
+{
+  "tool": "revert_to_snapshot",
+  "originalDocumentId": "your_document_id",
+  "snapshotId": "snapshot_file_id",
+  "documentType": "spreadsheet"
+}
+```
+
+**Delete old snapshots:**
+```json
+{
+  "tool": "delete_snapshot",
+  "snapshotId": "snapshot_file_id"
+}
+```
+
+### Opting Out of Snapshots
+
+For any write operation, add `skipSnapshot: true`:
+```json
+{
+  "tool": "update_sheet_values",
+  "spreadsheetId": "...",
+  "range": "Sheet1!A1:B10",
+  "values": [[1, 2], [3, 4]],
+  "skipSnapshot": true
+}
+```
+
+## Example Use Cases
+
+### Automated QA Workbooks (Perfect for GitHub Actions!)
+
+The Sheets tools are designed to be stateless and scriptable, making them ideal for CI/CD:
+
+```javascript
+// Create a test plan workbook
+await create_spreadsheet({
+  title: "Release 2.0 QA Plan",
+  sheets: ["Test Cases", "Bug Tracking", "Sign-off"]
+});
+
+// Populate test cases
+await update_sheet_values({
+  spreadsheetId: "...",
+  range: "Test Cases!A1:C1",
+  values: [["Test ID", "Description", "Status"]]
+});
+
+// Append test results as they come in
+await append_sheet_values({
+  spreadsheetId: "...",
+  range: "Test Cases!A2",
+  values: [["TC-001", "Login flow", "PASS"]]
+});
+```
+
+### Presentation Automation
+
+```javascript
+// Create monthly report presentation
+await create_presentation({ title: "Q4 2024 Report" });
+
+// Add slides with data visualization
+await batch_update_presentation({
+  presentationId: "...",
+  requests: [/* slide creation requests */]
+});
+
+// Safe to experiment - snapshot created automatically!
+```
+
+### Collaborative Data Management
+
+```javascript
+// List all changes made to a spreadsheet
+const snapshots = await list_snapshots({
+  documentId: "shared_budget_spreadsheet_id"
+});
+
+// Revert if something went wrong
+await revert_to_snapshot({
+  originalDocumentId: "shared_budget_spreadsheet_id",
+  snapshotId: snapshots[0].snapshotId,
+  documentType: "spreadsheet"
+});
+```
+
+## Troubleshooting
+
+### "Invalid grant" or "Token expired" errors
+- Your refresh token may be invalid
+- Re-run `npm run get-token` to get a new one
+- Check that all 4 OAuth scopes are enabled
+
+### Snapshots not being created
+- Verify `drive.file` scope is enabled
+- Check that you haven't set `skipSnapshot: true`
+- Look for warning messages in server logs
+
+### Permission denied errors
+- Ensure all 4 APIs are enabled in Google Cloud Console
+- Verify your OAuth consent screen has all required scopes
+- Check that the refresh token was generated with all scopes
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Run linter
+npm run lint
+
+# Start server
+npm start
+
+# Generate new refresh token
+npm run get-token
+```
+
+## Security Notes
+
+- Keep your `.env` file secure and never commit it to version control
+- The `drive.file` scope only allows access to files created by this app
+- Snapshots are stored in your Google Drive - you control them
+- Refresh tokens should be treated like passwords
+
+## License
+
+ISC
+
+## Contributing
+
+Issues and pull requests welcome! This MCP server is designed to be extended with additional Google Workspace services (Docs, Forms, etc.) in the future.
+
+## Version History
+
+- **0.2.0** - Added Google Sheets support and automatic snapshot version control
+- **0.1.0** - Initial release with Google Slides support
