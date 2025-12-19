@@ -17,6 +17,7 @@ This project provides a Model Context Protocol (MCP) server for interacting with
 - Google Cloud Project with APIs enabled (Slides, Sheets, Drive)
 - OAuth 2.0 Credentials (Client ID and Client Secret)
 - **Google Refresh Token** (one-time setup - see below)
+- **Google Cloud CLI** (optional but recommended for debugging) - `brew install google-cloud-sdk`
 
 ## Quick Start
 
@@ -295,10 +296,75 @@ await revert_to_snapshot({
 
 ## Troubleshooting
 
+### Using gcloud CLI for Debugging
+
+Install the Google Cloud CLI to quickly check your project configuration:
+
+```bash
+# Install (macOS)
+brew install google-cloud-sdk
+
+# Add to shell (add to ~/.zshrc for persistence)
+source "$(brew --prefix)/share/google-cloud-sdk/path.zsh.inc"
+
+# Initialize and login
+gcloud init
+
+# Check which APIs are enabled
+gcloud services list --enabled | grep -i "sheets\|slides\|drive"
+```
+
+Expected output when all APIs are enabled:
+```
+drive.googleapis.com                 Google Drive API
+sheets.googleapis.com                Google Sheets API
+slides.googleapis.com                Google Slides API
+```
+
+### "Request had insufficient authentication scopes" errors
+
+This is the most common issue. Check these **in order**:
+
+1. **Are all 3 APIs enabled?** Run:
+   ```bash
+   gcloud services list --enabled | grep -i "sheets\|slides\|drive"
+   ```
+   If any are missing, enable them:
+   ```bash
+   gcloud services enable sheets.googleapis.com
+   gcloud services enable slides.googleapis.com
+   gcloud services enable drive.googleapis.com
+   ```
+
+2. **Are all 4 scopes in your OAuth consent screen?**
+   - Go to: APIs & Services > OAuth consent screen > Edit App > Scopes
+   - You need ALL of these:
+     - `https://www.googleapis.com/auth/presentations`
+     - `https://www.googleapis.com/auth/spreadsheets`
+     - `https://www.googleapis.com/auth/drive.readonly`
+     - `https://www.googleapis.com/auth/drive.file`
+
+3. **Did you regenerate the token AFTER adding scopes?**
+   - This is critical: scopes are baked into the refresh token at generation time
+   - If you add scopes later, you MUST regenerate: `npm run get-token`
+
+### "API has not been used in project" errors
+
+The API needs to be enabled in Google Cloud Console. The error message includes a direct link - click it to enable the API, wait 1-2 minutes for propagation, then retry.
+
 ### "Invalid grant" or "Token expired" errors
 - Your refresh token may be invalid
 - Re-run `npm run get-token` to get a new one
 - Check that all 4 OAuth scopes are enabled
+
+### Slides works but Sheets doesn't (or vice versa)
+
+This usually means the `spreadsheets` (or `presentations`) scope wasn't in your OAuth consent screen when you generated the token:
+
+1. Add the missing scope to OAuth consent screen
+2. Regenerate your token: `npm run get-token`
+3. Update your config/env with the new token
+4. Restart the MCP server
 
 ### Snapshots not being created
 - Verify `drive.file` scope is enabled
@@ -309,6 +375,48 @@ await revert_to_snapshot({
 - Ensure all 4 APIs are enabled in Google Cloud Console
 - Verify your OAuth consent screen has all required scopes
 - Check that the refresh token was generated with all scopes
+
+## FAQ
+
+### Why do I need to regenerate my token after adding scopes?
+
+OAuth refresh tokens encode the scopes they were granted at creation time. If you add new scopes to your OAuth consent screen, existing tokens don't automatically gain access to them. You must generate a new token that includes the new scopes.
+
+### Can I use the same token across multiple machines?
+
+Yes! The refresh token is tied to your Google account and OAuth app, not your machine. Copy the same `GOOGLE_REFRESH_TOKEN` to any machine where you want to use this MCP server.
+
+### How do I know which scopes my current token has?
+
+The easiest way is to test each feature. If Slides works but Sheets fails with "insufficient scopes", your token is missing the Sheets scope. Use `npm run get-token` to generate a fresh token with all scopes.
+
+### Why is the gcloud CLI recommended?
+
+It makes debugging much faster. Instead of clicking through the Google Cloud Console UI, you can quickly check:
+- Which project you're using
+- Which APIs are enabled
+- Your current authentication status
+
+### The token generator opens a browser but nothing happens
+
+Make sure you're logged into the correct Google account. If you have multiple accounts, the browser may be defaulting to a different one. Try using an incognito window or explicitly signing out first.
+
+## Testing with MCP Inspector
+
+You can test the MCP server directly using the MCP Inspector without needing Claude:
+
+```bash
+cd /Users/path/to/google-workspace-mcp
+export $(cat .env | xargs) && npx @modelcontextprotocol/inspector node build/index.js
+```
+
+This opens a web UI where you can:
+- Browse all available tools
+- Execute tools with custom parameters
+- See raw JSON responses
+- Debug issues before integrating with Claude
+
+This is useful for verifying your OAuth setup is working correctly.
 
 ## Development
 
