@@ -1,6 +1,6 @@
 {
   "name": "google-workspace-mcp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "MCP server for Google Workspace (Slides + Sheets + Docs) with access to native version history",
   "type": "module",
   "main": "build/index.js",
