@@ -8,6 +8,9 @@
     "build": "tsc",
     "start": "node build/index.js",
     "lint": "eslint . --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "get-token": "npm run build && node build/getRefreshToken.js"
   },
   "keywords": [],
@@ -25,11 +28,13 @@
     "@eslint/js": "^9.8.0",
     "@types/node": "^22.14.1",
     "@types/server-destroy": "^1.0.4",
+    "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.2.1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.0.0-alpha.59"
+    "typescript-eslint": "^8.0.0-alpha.59",
+    "vitest": "^4.0.16"
   }
 }
