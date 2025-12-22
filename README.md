@@ -1,11 +1,12 @@
 # Google Workspace MCP Server
 
-This project provides a Model Context Protocol (MCP) server for interacting with **Google Slides** and **Google Sheets** APIs. Create, read, and modify presentations and spreadsheets programmatically, with access to Google's built-in version history for easy undo/restore.
+This project provides a Model Context Protocol (MCP) server for interacting with **Google Slides**, **Google Sheets**, and **Google Docs** APIs. Create, read, and modify presentations, spreadsheets, and documents programmatically, with access to Google's built-in version history for easy undo/restore.
 
 ## Features
 
 - **Google Sheets**: Create, read, update, and manipulate spreadsheets
 - **Google Slides**: Create and modify presentations
+- **Google Docs**: Create, read, update, and extract text from documents
 - **Version History**: Access Google's native revision history for any document
 - **Minimal Permissions**: Uses least-privilege OAuth scopes
 
@@ -13,7 +14,7 @@ This project provides a Model Context Protocol (MCP) server for interacting with
 
 - Node.js (v18 or later recommended)
 - npm (usually comes with Node.js)
-- Google Cloud Project with APIs enabled (Slides, Sheets, Drive)
+- Google Cloud Project with APIs enabled (Slides, Sheets, Docs, Drive)
 - OAuth 2.0 Credentials (Client ID and Client Secret)
 - **Google Refresh Token** (one-time setup - see below)
 - **Google Cloud CLI** (optional but recommended for debugging) - `brew install google-cloud-sdk`
@@ -54,6 +55,7 @@ Go to [Google Cloud Console](https://console.cloud.google.com/):
 3. Enable the following APIs:
    - **Google Slides API**
    - **Google Sheets API**
+   - **Google Docs API**
    - **Google Drive API**
 
 ### 2. Create OAuth 2.0 Credentials
@@ -66,6 +68,7 @@ Go to [Google Cloud Console](https://console.cloud.google.com/):
 4. On the "Scopes" page, click "ADD OR REMOVE SCOPES" and add:
    - `https://www.googleapis.com/auth/presentations` (Slides access)
    - `https://www.googleapis.com/auth/spreadsheets` (Sheets access)
+   - `https://www.googleapis.com/auth/documents` (Docs access)
    - `https://www.googleapis.com/auth/drive.readonly` (Read Drive files/revisions)
    - `https://www.googleapis.com/auth/drive.file` (Manage files created by app)
 5. Complete consent screen setup
@@ -115,6 +118,7 @@ Go to [Google Cloud Console](https://console.cloud.google.com/):
 4. In "Step 1", select these scopes:
    - `https://www.googleapis.com/auth/presentations`
    - `https://www.googleapis.com/auth/spreadsheets`
+   - `https://www.googleapis.com/auth/documents`
    - `https://www.googleapis.com/auth/drive.readonly`
    - `https://www.googleapis.com/auth/drive.file`
 5. Click "Authorize APIs" and sign in
@@ -164,6 +168,13 @@ Replace `/absolute/path/to/google-workspace-mcp` with the actual path to your in
 - `append_sheet_values` - Append rows to a sheet
 - `copy_sheet` - Copy a sheet between spreadsheets (preserves all formatting and styles)
 
+### Google Docs Tools
+
+- `create_document` - Create a new document
+- `get_document` - Get full document content and metadata
+- `batch_update_document` - Apply batch updates (insert text, delete content, format text, etc.)
+- `summarize_document` - Extract text content for summarization
+
 ### Version History Tools
 
 These tools use Google's native revision history (no extra files created):
@@ -173,7 +184,7 @@ These tools use Google's native revision history (no extra files created):
 
 ## Version History (Undo/Restore)
 
-Both Google Sheets and Google Slides have built-in version history that automatically tracks all changes. This MCP server provides access to that history:
+Google Sheets, Google Slides, and Google Docs all have built-in version history that automatically tracks all changes. This MCP server provides access to that history:
 
 **List all versions of a document:**
 ```json
@@ -194,7 +205,7 @@ Both Google Sheets and Google Slides have built-in version history that automati
 ```
 
 To restore a previous version:
-1. Open the document in Google Sheets/Slides
+1. Open the document in Google Sheets/Slides/Docs
 2. Go to **File > Version history > See version history**
 3. Click on the version you want to restore
 4. Click "Restore this version"
@@ -278,6 +289,7 @@ This MCP server requests only the minimum OAuth scopes needed:
 |-------|---------|--------------|
 | `presentations` | Create/edit presentations | Full access to Slides |
 | `spreadsheets` | Create/edit spreadsheets | Full access to Sheets |
+| `documents` | Create/edit documents | Full access to Docs |
 | `drive.readonly` | List revisions | Read-only Drive access |
 | `drive.file` | Manage created files | Only files created by this app |
 
@@ -293,6 +305,7 @@ This MCP server requests only the minimum OAuth scopes needed:
 
 - **Slides**: All presentations in your Google account
 - **Sheets**: All spreadsheets in your Google account
+- **Docs**: All documents in your Google account
 - **Drive**: Read-only access to list files and revisions; write access only to files created by this app
 
 ### What This Server Cannot Access
@@ -318,11 +331,12 @@ source "$(brew --prefix)/share/google-cloud-sdk/path.zsh.inc"
 gcloud init
 
 # Check which APIs are enabled
-gcloud services list --enabled | grep -i "sheets\|slides\|drive"
+gcloud services list --enabled | grep -i "sheets\|slides\|docs\|drive"
 ```
 
 Expected output when all APIs are enabled:
 ```
+docs.googleapis.com                  Google Docs API
 drive.googleapis.com                 Google Drive API
 sheets.googleapis.com                Google Sheets API
 slides.googleapis.com                Google Slides API
@@ -332,22 +346,24 @@ slides.googleapis.com                Google Slides API
 
 This is the most common issue. Check these **in order**:
 
-1. **Are all 3 APIs enabled?** Run:
+1. **Are all 4 APIs enabled?** Run:
    ```bash
-   gcloud services list --enabled | grep -i "sheets\|slides\|drive"
+   gcloud services list --enabled | grep -i "sheets\|slides\|docs\|drive"
    ```
    If any are missing, enable them:
    ```bash
    gcloud services enable sheets.googleapis.com
    gcloud services enable slides.googleapis.com
+   gcloud services enable docs.googleapis.com
    gcloud services enable drive.googleapis.com
    ```
 
-2. **Are all 4 scopes in your OAuth consent screen?**
+2. **Are all 5 scopes in your OAuth consent screen?**
    - Go to: APIs & Services > OAuth consent screen > Edit App > Scopes
    - You need ALL of these:
      - `https://www.googleapis.com/auth/presentations`
      - `https://www.googleapis.com/auth/spreadsheets`
+     - `https://www.googleapis.com/auth/documents`
      - `https://www.googleapis.com/auth/drive.readonly`
      - `https://www.googleapis.com/auth/drive.file`
 
@@ -362,7 +378,7 @@ The API needs to be enabled in Google Cloud Console. The error message includes 
 ### "Invalid grant" or "Token expired" errors
 - Your refresh token may be invalid
 - Re-run `npm run get-token` to get a new one
-- Check that all 4 OAuth scopes are enabled
+- Check that all 5 OAuth scopes are enabled
 
 ### Slides works but Sheets doesn't (or vice versa)
 
@@ -374,8 +390,8 @@ This usually means the `spreadsheets` (or `presentations`) scope wasn't in your 
 4. Restart the MCP server
 
 ### Permission denied errors
-- Ensure all 4 APIs are enabled in Google Cloud Console
-- Verify your OAuth consent screen has all required scopes
+- Ensure all 4 APIs (Slides, Sheets, Docs, Drive) are enabled in Google Cloud Console
+- Verify your OAuth consent screen has all 5 required scopes
 - Check that the refresh token was generated with all scopes
 
 ## FAQ
@@ -445,10 +461,11 @@ ISC
 
 ## Contributing
 
-Issues and pull requests welcome! This MCP server is designed to be extended with additional Google Workspace services (Docs, Forms, etc.) in the future.
+Issues and pull requests welcome! This MCP server is designed to be extended with additional Google Workspace services (Forms, Calendar, etc.) in the future.
 
 ## Version History
 
+- **0.4.0** - Added Google Docs support (create, get, batch update, summarize documents)
 - **0.3.1** - Added `copy_sheet` tool for copying sheets between spreadsheets with full formatting
 - **0.3.0** - Simplified version control using Google's native revision history (removed custom snapshots)
 - **0.2.0** - Added Google Sheets support

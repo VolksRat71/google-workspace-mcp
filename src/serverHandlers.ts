@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
-import { slides_v1, sheets_v4, drive_v3 } from 'googleapis';
+import { slides_v1, sheets_v4, drive_v3, docs_v1 } from 'googleapis';
 import {
   CreatePresentationArgsSchema,
   GetPresentationArgsSchema,
@@ -17,6 +17,10 @@ import {
   AppendSheetValuesArgsSchema,
   SummarizeSpreadsheetArgsSchema,
   CopySheetArgsSchema,
+  CreateDocumentArgsSchema,
+  GetDocumentArgsSchema,
+  BatchUpdateDocumentArgsSchema,
+  SummarizeDocumentArgsSchema,
 } from './schemas.js';
 import { createPresentationTool } from './tools/slides/createPresentation.js';
 import { getPresentationTool } from './tools/slides/getPresentation.js';
@@ -33,12 +37,17 @@ import { summarizeSpreadsheetTool } from './tools/sheets/summarizeSpreadsheet.js
 import { copySheetTool } from './tools/sheets/copySheet.js';
 import { listRevisions, getRevision } from './utils/revisionManager.js';
 import { executeTool } from './utils/toolExecutor.js';
+import { createDocumentTool } from './tools/docs/createDocument.js';
+import { getDocumentTool } from './tools/docs/getDocument.js';
+import { batchUpdateDocumentTool } from './tools/docs/batchUpdateDocument.js';
+import { summarizeDocumentTool } from './tools/docs/summarizeDocument.js';
 
 export const setupToolHandlers = (
   server: Server,
   slides: slides_v1.Slides,
   sheets: sheets_v4.Sheets,
-  drive: drive_v3.Drive
+  drive: drive_v3.Drive,
+  docs: docs_v1.Docs
 ) => {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
@@ -346,11 +355,74 @@ export const setupToolHandlers = (
             },
             documentType: {
               type: 'string',
-              enum: ['presentation', 'spreadsheet'],
+              enum: ['presentation', 'spreadsheet', 'document'],
               description: 'The type of document.',
             },
           },
           required: ['documentId', 'revisionId', 'documentType'],
+        },
+      },
+      // ===== Google Docs Tools =====
+      {
+        name: 'create_document',
+        description: 'Create a new Google Document',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'The title of the document.',
+            },
+          },
+          required: ['title'],
+        },
+      },
+      {
+        name: 'get_document',
+        description: 'Get the full content and metadata of a Google Document',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            documentId: {
+              type: 'string',
+              description: 'The ID of the document to retrieve.',
+            },
+          },
+          required: ['documentId'],
+        },
+      },
+      {
+        name: 'batch_update_document',
+        description: 'Apply a batch of updates to a Google Document (insert text, delete content, format text, etc.)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            documentId: {
+              type: 'string',
+              description: 'The ID of the document to update.',
+            },
+            requests: {
+              type: 'array',
+              description:
+                'A list of update requests to apply. See Google Docs API documentation for request structures.',
+              items: { type: 'object' },
+            },
+          },
+          required: ['documentId', 'requests'],
+        },
+      },
+      {
+        name: 'summarize_document',
+        description: 'Extract text content from a Google Document for summarization purposes',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            documentId: {
+              type: 'string',
+              description: 'The ID of the document to summarize.',
+            },
+          },
+          required: ['documentId'],
         },
       },
     ],
@@ -432,6 +504,24 @@ export const setupToolHandlers = (
           return {
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
           };
+        }
+
+        // ===== Docs Tools =====
+        case 'create_document': {
+          const parsedArgs = CreateDocumentArgsSchema.parse(args);
+          return await createDocumentTool(docs, parsedArgs);
+        }
+        case 'get_document': {
+          const parsedArgs = GetDocumentArgsSchema.parse(args);
+          return await getDocumentTool(docs, parsedArgs);
+        }
+        case 'batch_update_document': {
+          const parsedArgs = BatchUpdateDocumentArgsSchema.parse(args);
+          return await batchUpdateDocumentTool(docs, parsedArgs);
+        }
+        case 'summarize_document': {
+          const parsedArgs = SummarizeDocumentArgsSchema.parse(args);
+          return await summarizeDocumentTool(docs, parsedArgs);
         }
         default:
           return {

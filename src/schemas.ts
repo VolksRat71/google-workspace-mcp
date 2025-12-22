@@ -37,7 +37,7 @@ export type SummarizePresentationArgs = z.infer<typeof SummarizePresentationArgs
 
 // ===== Version History Schemas (using Google's native revisions) =====
 
-export const DocumentTypeSchema = z.enum(['presentation', 'spreadsheet']);
+export const DocumentTypeSchema = z.enum(['presentation', 'spreadsheet', 'document']);
 
 export const ListRevisionsArgsSchema = z.object({
   documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
@@ -108,3 +108,28 @@ export const CopySheetArgsSchema = z.object({
   destinationSpreadsheetId: z.string().min(1, { message: '"destinationSpreadsheetId" (string) is required.' }),
 });
 export type CopySheetArgs = z.infer<typeof CopySheetArgsSchema>;
+
+// ===== Google Docs Schemas =====
+
+const GoogleDocsRequestSchema = z.any();
+
+export const CreateDocumentArgsSchema = z.object({
+  title: z.string().min(1, { message: '"title" (string) is required.' }),
+});
+export type CreateDocumentArgs = z.infer<typeof CreateDocumentArgsSchema>;
+
+export const GetDocumentArgsSchema = z.object({
+  documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
+});
+export type GetDocumentArgs = z.infer<typeof GetDocumentArgsSchema>;
+
+export const BatchUpdateDocumentArgsSchema = z.object({
+  documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
+  requests: z.array(GoogleDocsRequestSchema).min(1, { message: '"requests" (array) is required.' }),
+});
+export type BatchUpdateDocumentArgs = z.infer<typeof BatchUpdateDocumentArgsSchema>;
+
+export const SummarizeDocumentArgsSchema = z.object({
+  documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
+});
+export type SummarizeDocumentArgs = z.infer<typeof SummarizeDocumentArgsSchema>;

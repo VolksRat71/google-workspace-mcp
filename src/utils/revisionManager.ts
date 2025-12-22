@@ -1,6 +1,6 @@
 import { drive_v3 } from 'googleapis';
 
-export type DocumentType = 'presentation' | 'spreadsheet';
+export type DocumentType = 'presentation' | 'spreadsheet' | 'document';
 
 export interface RevisionInfo {
   revisionId: string;
@@ -83,9 +83,18 @@ export async function getRevision(
     size: response.data.size || undefined,
   };
 
-  const baseUrl = documentType === 'presentation'
-    ? 'https://docs.google.com/presentation/d'
-    : 'https://docs.google.com/spreadsheets/d';
+  let baseUrl: string;
+  switch (documentType) {
+    case 'presentation':
+      baseUrl = 'https://docs.google.com/presentation/d';
+      break;
+    case 'spreadsheet':
+      baseUrl = 'https://docs.google.com/spreadsheets/d';
+      break;
+    case 'document':
+      baseUrl = 'https://docs.google.com/document/d';
+      break;
+  }
 
   const viewUrl = `${baseUrl}/${documentId}/edit`;
 
