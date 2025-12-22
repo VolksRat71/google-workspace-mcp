@@ -8,13 +8,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      exclude: [
-        'node_modules',
-        'build',
-        'src/**/*.test.ts',
-        'src/getRefreshToken.ts',
-        'vitest.config.ts',
-      ],
+      exclude: ['node_modules', 'build', 'src/**/*.test.ts', 'src/getRefreshToken.ts', 'vitest.config.ts'],
     },
   },
 });

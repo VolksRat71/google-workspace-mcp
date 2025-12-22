@@ -57,7 +57,8 @@ export const tools = [
         },
         requests: {
           type: 'array',
-          description: 'A list of update requests to apply. See Google Slides API documentation for request structures.',
+          description:
+            'A list of update requests to apply. See Google Slides API documentation for request structures.',
           items: { type: 'object' },
         },
         writeControl: {

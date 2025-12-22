@@ -8,10 +8,7 @@ import { handleGoogleApiError } from '../../utils/errorHandler.js';
  * @param args The arguments for updating sheet values
  * @returns A promise resolving to the MCP response content
  */
-export const updateSheetValuesTool = async (
-  sheets: sheets_v4.Sheets,
-  args: UpdateSheetValuesArgs
-) => {
+export const updateSheetValuesTool = async (sheets: sheets_v4.Sheets, args: UpdateSheetValuesArgs) => {
   try {
     const response = await sheets.spreadsheets.values.update({
       spreadsheetId: args.spreadsheetId,

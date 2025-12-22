@@ -9,10 +9,7 @@ import { handleGoogleApiError } from '../../utils/errorHandler.js';
  * @returns A promise resolving to the MCP response content.
  * @throws McpError if the Google API call fails.
  */
-export const batchUpdatePresentationTool = async (
-  slides: slides_v1.Slides,
-  args: BatchUpdatePresentationArgs
-) => {
+export const batchUpdatePresentationTool = async (slides: slides_v1.Slides, args: BatchUpdatePresentationArgs) => {
   try {
     const response = await slides.presentations.batchUpdate({
       presentationId: args.presentationId,

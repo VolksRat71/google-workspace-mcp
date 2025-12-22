@@ -2,10 +2,7 @@ import { drive_v3 } from 'googleapis';
 import { CreateFolderArgs } from '../../schemas.js';
 import { handleGoogleApiError } from '../../utils/errorHandler.js';
 
-export const createFolderTool = async (
-  drive: drive_v3.Drive,
-  args: CreateFolderArgs
-) => {
+export const createFolderTool = async (drive: drive_v3.Drive, args: CreateFolderArgs) => {
   try {
     const response = await drive.files.create({
       requestBody: {

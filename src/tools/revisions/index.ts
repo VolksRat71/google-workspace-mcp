@@ -52,12 +52,7 @@ export const createHandlers = (drive: drive_v3.Drive) => ({
   },
   get_revision: async (args: unknown) => {
     const parsedArgs = GetRevisionArgsSchema.parse(args);
-    const result = await getRevision(
-      drive,
-      parsedArgs.documentId,
-      parsedArgs.revisionId,
-      parsedArgs.documentType
-    );
+    const result = await getRevision(drive, parsedArgs.documentId, parsedArgs.revisionId, parsedArgs.documentType);
     return {
       content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
     };

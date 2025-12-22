@@ -8,10 +8,7 @@ import { handleGoogleApiError } from '../../utils/errorHandler.js';
  * @param args The arguments for appending sheet values
  * @returns A promise resolving to the MCP response content
  */
-export const appendSheetValuesTool = async (
-  sheets: sheets_v4.Sheets,
-  args: AppendSheetValuesArgs
-) => {
+export const appendSheetValuesTool = async (sheets: sheets_v4.Sheets, args: AppendSheetValuesArgs) => {
   try {
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: args.spreadsheetId,

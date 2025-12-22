@@ -8,10 +8,7 @@ import { handleGoogleApiError } from '../../utils/errorHandler.js';
  * @param args The arguments for copying the sheet
  * @returns A promise resolving to the MCP response content
  */
-export const copySheetTool = async (
-  sheets: sheets_v4.Sheets,
-  args: CopySheetArgs
-) => {
+export const copySheetTool = async (sheets: sheets_v4.Sheets, args: CopySheetArgs) => {
   try {
     const response = await sheets.spreadsheets.sheets.copyTo({
       spreadsheetId: args.sourceSpreadsheetId,

@@ -8,10 +8,7 @@ import { handleGoogleApiError } from '../../utils/errorHandler.js';
  * @param args The arguments for batch updating a spreadsheet
  * @returns A promise resolving to the MCP response content
  */
-export const batchUpdateSpreadsheetTool = async (
-  sheets: sheets_v4.Sheets,
-  args: BatchUpdateSpreadsheetArgs
-) => {
+export const batchUpdateSpreadsheetTool = async (sheets: sheets_v4.Sheets, args: BatchUpdateSpreadsheetArgs) => {
   try {
     const response = await sheets.spreadsheets.batchUpdate({
       spreadsheetId: args.spreadsheetId,
