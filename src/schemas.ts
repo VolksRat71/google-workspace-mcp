@@ -133,3 +133,11 @@ export const SummarizeDocumentArgsSchema = z.object({
   documentId: z.string().min(1, { message: '"documentId" (string) is required.' }),
 });
 export type SummarizeDocumentArgs = z.infer<typeof SummarizeDocumentArgsSchema>;
+
+// ===== Google Drive Schemas =====
+
+export const CreateFolderArgsSchema = z.object({
+  name: z.string().min(1, { message: '"name" (string) is required.' }),
+  parentFolderId: z.string().optional(),
+});
+export type CreateFolderArgs = z.infer<typeof CreateFolderArgsSchema>;

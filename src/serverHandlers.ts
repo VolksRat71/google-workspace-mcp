@@ -21,6 +21,7 @@ import {
   GetDocumentArgsSchema,
   BatchUpdateDocumentArgsSchema,
   SummarizeDocumentArgsSchema,
+  CreateFolderArgsSchema,
 } from './schemas.js';
 import { createPresentationTool } from './tools/slides/createPresentation.js';
 import { getPresentationTool } from './tools/slides/getPresentation.js';
@@ -41,6 +42,7 @@ import { createDocumentTool } from './tools/docs/createDocument.js';
 import { getDocumentTool } from './tools/docs/getDocument.js';
 import { batchUpdateDocumentTool } from './tools/docs/batchUpdateDocument.js';
 import { summarizeDocumentTool } from './tools/docs/summarizeDocument.js';
+import { createFolderTool } from './tools/drive/createFolder.js';
 
 export const setupToolHandlers = (
   server: Server,
@@ -425,6 +427,25 @@ export const setupToolHandlers = (
           required: ['documentId'],
         },
       },
+      // ===== Google Drive Tools =====
+      {
+        name: 'create_folder',
+        description: 'Create a new folder in Google Drive',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'The name of the folder to create.',
+            },
+            parentFolderId: {
+              type: 'string',
+              description: 'Optional. The ID of the parent folder. If not specified, creates in root.',
+            },
+          },
+          required: ['name'],
+        },
+      },
     ],
   }));
 
@@ -522,6 +543,12 @@ export const setupToolHandlers = (
         case 'summarize_document': {
           const parsedArgs = SummarizeDocumentArgsSchema.parse(args);
           return await summarizeDocumentTool(docs, parsedArgs);
+        }
+
+        // ===== Drive Tools =====
+        case 'create_folder': {
+          const parsedArgs = CreateFolderArgsSchema.parse(args);
+          return await createFolderTool(drive, parsedArgs);
         }
         default:
           return {
