@@ -60,6 +60,10 @@ Add to your MCP settings:
 | Tool | Description |
 |------|-------------|
 | `create_folder` | Create a folder in Google Drive |
+| `list_files` | List files/folders with filtering, pagination, and sorting. Supports Shared Drives. |
+| `get_file` | Get detailed metadata for a specific file (permissions, capabilities, owners) |
+| `search_files` | Search Drive using query syntax (e.g., `name contains 'report'`) |
+| `export_file` | Export Google Docs/Sheets/Slides to PDF, text, CSV, docx, etc. |
 
 ### Sheets
 | Tool | Description |
@@ -107,18 +111,19 @@ This server requests the minimum scopes needed:
 | `presentations` | Create/edit Google Slides |
 | `spreadsheets` | Create/edit Google Sheets |
 | `documents` | Create/edit Google Docs |
-| `drive.readonly` | Read file metadata and revisions |
-| `drive.file` | Manage files created by this app |
+| `drive.readonly` | Browse, search, and read file metadata (including Shared Drives) |
+| `drive.file` | Export and manage files created by this app |
 
 ### What This Server CAN Access
 - All Slides presentations in your account
 - All Sheets spreadsheets in your account
 - All Docs documents in your account
-- Drive file metadata and version history
+- Drive file metadata, browsing, and search (including Shared Drives)
+- Export Google Workspace files to other formats (PDF, text, CSV, etc.)
 
 ### What This Server CANNOT Access
 - Gmail, Calendar, or other Google services
-- Files created by other applications (limited by `drive.file` scope)
+- Delete or permanently modify files you don't own
 - Your Google account password or 2FA settings
 
 ### Security Best Practices

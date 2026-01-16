@@ -141,3 +141,31 @@ export const CreateFolderArgsSchema = z.object({
   parentFolderId: z.string().optional(),
 });
 export type CreateFolderArgs = z.infer<typeof CreateFolderArgsSchema>;
+
+export const ListFilesArgsSchema = z.object({
+  folderId: z.string().optional(),
+  pageSize: z.number().min(1).max(100).optional(),
+  pageToken: z.string().optional(),
+  orderBy: z.string().optional(),
+  mimeType: z.string().optional(),
+  includeTrashed: z.boolean().optional(),
+});
+export type ListFilesArgs = z.infer<typeof ListFilesArgsSchema>;
+
+export const GetFileArgsSchema = z.object({
+  fileId: z.string().min(1, { message: '"fileId" (string) is required.' }),
+});
+export type GetFileArgs = z.infer<typeof GetFileArgsSchema>;
+
+export const SearchFilesArgsSchema = z.object({
+  query: z.string().min(1, { message: '"query" (string) is required.' }),
+  pageSize: z.number().min(1).max(100).optional(),
+  pageToken: z.string().optional(),
+});
+export type SearchFilesArgs = z.infer<typeof SearchFilesArgsSchema>;
+
+export const ExportFileArgsSchema = z.object({
+  fileId: z.string().min(1, { message: '"fileId" (string) is required.' }),
+  mimeType: z.string().min(1, { message: '"mimeType" (string) is required.' }),
+});
+export type ExportFileArgs = z.infer<typeof ExportFileArgsSchema>;
